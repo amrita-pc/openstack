@@ -1,0 +1,44 @@
+######################################################################
+## This bash script provides VNF name as well as tenant/project name
+## Note: eval(openstack .. -f shell) sets shell variables
+######################################################################
+
+header='no'
+for server in $(openstack server list --all -c ID -f value); do 
+ if [[ $header == 'no' ]]; then
+	printf "%0.s-" {1..76} 
+	printf '\n%-60s | %s\n' "VNF NAME" "PROJECT NAME"
+	printf "%0.s-" {1..76} 
+	printf "\n"
+	header='yes'
+ else
+	eval $(openstack server show $server -f shell -c name -c project_id) 
+	project_name=$(openstack project show $project_id -f value -c name) 
+	printf '%-60s | %s\n' $name $project_name
+ fi
+done
+
+--------------
+Sample output
+--------------
+
+----------------------------------------------------------------------------
+VNF NAME                                                     | PROJECT NAME
+----------------------------------------------------------------------------
+theodore-test                                                | core
+sf1-3                                 					          	 | core
+sf1-2                                					               | core
+sf1-0                              						               | core
+sf1-1                             						               | core
+esc02-drbd                                                   | admin
+esc01-drbd                                                   | admin
+xyz-instance                                                 | user123
+staros-vpc-si_mme_0_78013b71-c61d-4b8b-b279-3dc22fcb6f4b     | core
+staros-vpc-si_hss_0_a1d49b17-b97e-43e0-a5c1-f18b8d906f2b     | core
+staros-vpc-si_tools-_0_c8082b56-6270-4728-b0fc-fbc0db3c9d3f  | core
+em-3                                                         | core
+em-2                                                         | core
+em-1                                                         | core
+esc02                                                        | core
+esc01                                                        | core
+cpod-autovnf-1                                               | core
