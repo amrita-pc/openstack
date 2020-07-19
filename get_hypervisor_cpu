@@ -1,0 +1,51 @@
+#!/bin/bash
+
+## Use 'set -x' in subshell to print the openstack command before executing command
+
+## Print list of total CPU resources available across all hypervisors
+
+( set -x; openstack hypervisor stats show )
+
+## Iterate through all hypervisors and note how many CPUs each has
+
+## Calculate total sum of CPUs across all hypervisors (CPUSUM). This should correspond to the value in "openstack hypervisor stats show"
+
+for i in $(openstack host list -c "Host Name" -f value | grep compute); do
+        CPU="$(openstack host show $i -c Project -c CPU -f value | awk '/total/{print $NF}')"
+        printf "%-10s %d %s" "$i" "$CPU" "CPU"
+        printf "\n"
+        let CPUSUM=CPUSUM+CPU;
+done
+
+echo "Total number of vCPUs available: $CPUSUM"
+
+======
+OUTPUT
+======
+
+[root@host]# ./get_hypervisor_cpu.sh
++ openstack hypervisor stats show
++----------------------+---------+
+| Field                | Value   |
++----------------------+---------+
+| count                | 7       |
+| current_workload     | 0       |
+| disk_available_least | 5143    |
+| free_disk_gb         | 5371    |
+| free_ram_mb          | 720115  |
+| local_gb             | 5761    |
+| local_gb_used        | 390     |
+| memory_mb            | 1309943 |
+| memory_mb_used       | 589828  |
+| running_vms          | 19      |
+| vcpus                | 92      |
+| vcpus_used           | 113     |
++----------------------+---------+
+pod-compute-1 14 CPU
+pod-compute-2 14 CPU
+pod-compute-4 14 CPU
+pod-compute-3 14 CPU
+pod-osd-compute-1 12 CPU
+pod-osd-compute-2 12 CPU
+pod-osd-compute-3 12 CPU
+Total number of vCPUs available: 92
