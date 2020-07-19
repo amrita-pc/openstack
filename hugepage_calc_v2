@@ -1,0 +1,288 @@
+#!/bin/bash
+
+if [[ $(cat /proc/meminfo | awk '/AnonHugePages/{ if ($2 > 0){print}}') ]]; then
+    printf "\n"
+    echo "**** THP IN USE ****"
+    printf "\n"
+
+proc_ids=$(grep -e AnonHugePages  /proc/*/smaps | grep -v "0 kB" | awk -F'/' '{proc[$3]++} END {for (i in proc) print i}')
+for proc_id in $proc_ids; do
+printf '#-------------------------------------------------------\n\n'
+ps "$proc_id" && grep -e AnonHugePages /proc/"$proc_id"/smaps | awk -v pid=$proc_id 'NF>0 && $(NF-1) > 4 {mem[pid]+=$(NF-1)} END {for (pid in mem) print "Total THP " mem[pid] " kB"}'
+printf '#-------------------------------------------------------\n\n'
+done
+
+else
+    printf "\n"
+    echo "**** THP NOT IN USE ****"
+    printf "\n"
+fi
+
+
+if [[ $(grep huge /proc/*/numa_maps) ]]; then
+    printf "\n"
+    echo "**** STATIC HUGEPAGES IN USE ****"
+    printf "\n"
+
+echo "**** HUGEPAGE USAGE ****"
+
+proc_ids=$(grep huge /proc/*/numa_maps | awk -F'/' '{proc[$3]++} END {for (i in proc) print i}')
+
+for proc_id in $proc_ids; do
+printf '#-------------------------------------------------------\n\n'
+ps $proc_id
+printf "\n"
+echo -e "2048 kB hugepage size\n---------------------"
+read huge2mballoc < <(grep -B 11 'KernelPageSize:     2048 kB' /proc/"$proc_id"/smaps | grep "^Size:" | awk 'BEGIN{sum=0}{sum+=$2}END{print sum}')
+echo -e "$((huge2mballoc/1024)) Mb reserved\n"
+echo -e "1 GB hugepage size\n--------------------"
+read huge1gballoc < <(grep -B 11 'KernelPageSize:  1048576 kB' /proc/"$proc_id"/smaps | grep "^Size:" | awk 'BEGIN{sum=0}{sum+=$2}END{print sum}')
+echo -e "$((huge1gballoc/1024)) Mb reserved\n"
+ps -p "$proc_id" -o command | cut -c -51; echo " has $((huge2mballoc/1024+huge1gballoc/1024)) Mb reserved in static hugepages"
+printf "\n"
+set -x
+numastat -p $proc_id
+set +x
+done
+printf '#-------------------------------------------------------\n'
+
+else
+    printf "\n"
+    echo "**** STATIC HUGEPAGES NOT IN USE ****"
+    printf "\n"
+fi
+
+*************************************
+SAMPLE OUTPUT ON A SYSTEM USING THP
+*************************************
+
+[root@pod-compute-2 ~]# ./hugepage_calc.sh
+
+**** THP IN USE ****
+
+grep: /proc/21199/smaps: No such file or directory
+#-------------------------------------------------------
+
+  PID TTY      STAT   TIME COMMAND
+ 8042 ?        Ssl   25:03 /usr/bin/docker-current start -a novassh_22473
+Total THP 4096 kB
+#-------------------------------------------------------
+
+#-------------------------------------------------------
+
+  PID TTY      STAT   TIME COMMAND
+ 3341 ?        Ssl  180:10 /usr/libexec/docker/rhel-push-plugin
+Total THP 2048 kB
+#-------------------------------------------------------
+
+#-------------------------------------------------------
+
+  PID TTY      STAT   TIME COMMAND
+ 4728 ?        SLl  513:12 /usr/sbin/ovs-vswitchd unix:/var/run/openvswitch/db.sock -vconsole:emer -vsys
+Total THP 18432 kB
+#-------------------------------------------------------
+
+#-------------------------------------------------------
+
+  PID TTY      STAT   TIME COMMAND
+29726 ?        S    635:52 /usr/bin/python2 /usr/bin/neutron-sriov-nic-agent --config-file /etc/neutron/
+Total THP 6144 kB
+#-------------------------------------------------------
+
+#-------------------------------------------------------
+
+  PID TTY      STAT   TIME COMMAND
+27807 ?        Ssl   25:05 /usr/bin/docker-current start -a neutron_ovsagent_22473
+Total THP 4096 kB
+#-------------------------------------------------------
+
+#-------------------------------------------------------
+
+  PID TTY      STAT   TIME COMMAND
+ 3988 ?        Sl   741:39 /opt/td-agent/embedded/bin/ruby /usr/sbin/td-agent -c /etc/fluentd/config.d/f
+Total THP 18432 kB
+#-------------------------------------------------------
+
+#-------------------------------------------------------
+
+  PID TTY      STAT   TIME COMMAND
+27808 ?        Ssl   25:04 /usr/bin/docker-current start -a novalibvirt_22473
+Total THP 4096 kB
+#-------------------------------------------------------
+
+#-------------------------------------------------------
+
+  PID TTY      STAT   TIME COMMAND
+ 2616 ?        Ssl  3550:06 /usr/bin/docker-current daemon --authorization-plugin=rhel-push-plugin --exe
+Total THP 18432 kB
+#-------------------------------------------------------
+
+#-------------------------------------------------------
+
+  PID TTY      STAT   TIME COMMAND
+28130 ?        S    1530:28 /usr/bin/python2 /usr/bin/neutron-openvswitch-agent --config-file /etc/neutr
+Total THP 2048 kB
+#-------------------------------------------------------
+
+#-------------------------------------------------------
+
+  PID TTY      STAT   TIME COMMAND
+ 1935 ?        Ssl   25:01 /usr/bin/docker-current start -a novacommon_22473
+Total THP 2048 kB
+#-------------------------------------------------------
+
+#-------------------------------------------------------
+
+  PID TTY      STAT   TIME COMMAND
+15259 ?        Ssl  1588:45 /usr/local/bin/telegraf --config /etc/telegraf.conf
+Total THP 4096 kB
+#-------------------------------------------------------
+
+#-------------------------------------------------------
+
+  PID TTY      STAT   TIME COMMAND
+ 6280 ?        Ssl   25:04 /usr/bin/docker-current start -a novacompute_22473
+Total THP 6144 kB
+#-------------------------------------------------------
+
+#-------------------------------------------------------
+
+  PID TTY      STAT   TIME COMMAND
+ 3356 ?        Ssl   30:44 /usr/bin/docker-current start -a ovs_dbserver_22473
+Total THP 2048 kB
+#-------------------------------------------------------
+
+#-------------------------------------------------------
+
+  PID TTY      STAT   TIME COMMAND
+25459 ?        Ssl   25:17 /usr/bin/docker-current start -a neutron_common_22473
+Total THP 6144 kB
+#-------------------------------------------------------
+
+#-------------------------------------------------------
+
+  PID TTY      STAT   TIME COMMAND
+ 1080 ?        Ssl    2:38 /usr/lib/polkit-1/polkitd --no-debug
+Total THP 6144 kB
+#-------------------------------------------------------
+
+#-------------------------------------------------------
+
+  PID TTY      STAT   TIME COMMAND
+ 3357 ?        Ssl   30:40 /usr/bin/docker-current start -a ovs_vswitch_22473
+Total THP 4096 kB
+#-------------------------------------------------------
+
+#-------------------------------------------------------
+
+  PID TTY      STAT   TIME COMMAND
+ 3339 ?        Ssl   30:51 /usr/bin/docker-current start -a fluentd_22473
+Total THP 2048 kB
+#-------------------------------------------------------
+
+#-------------------------------------------------------
+
+  PID TTY      STAT   TIME COMMAND
+28576 ?        SLl  112691:22 /usr/libexec/qemu-kvm -name guest=instance-000001ea,debug-threads=on -S -o
+Total THP 50370560 kB
+#-------------------------------------------------------
+
+#-------------------------------------------------------
+
+  PID TTY      STAT   TIME COMMAND
+ 6334 ?        Sl   1711:25 /usr/bin/python2 /usr/bin/nova-compute --log-file /var/log/nova/nova-compute
+Total THP 8192 kB
+#-------------------------------------------------------
+
+#-------------------------------------------------------
+
+  PID TTY      STAT   TIME COMMAND
+  652 ?        Ssl    0:01 /usr/sbin/lvmetad -f
+Total THP 2048 kB
+#-------------------------------------------------------
+
+#-------------------------------------------------------
+
+  PID TTY      STAT   TIME COMMAND
+29577 ?        Ssl   25:13 /usr/bin/docker-current start -a neutron_sriov_22473
+Total THP 4096 kB
+#-------------------------------------------------------
+
+#-------------------------------------------------------
+
+  PID TTY      STAT   TIME COMMAND
+ 2613 ?        Ssl   14:42 /usr/bin/python -Es /usr/sbin/tuned -l -P
+Total THP 2048 kB
+#-------------------------------------------------------
+
+*************************************************
+SAMPLE OUTPUT ON A SYSTEM USING STATIC HUGEPAGES
+*************************************************
+
+[root@micropod-2 ~]# ./hugepage_calc.sh
+
+**** THP NOT IN USE ****
+
+
+**** STATIC HUGEPAGES IN USE ****
+
+**** HUGEPAGE USAGE ****
+#-------------------------------------------------------
+
+    PID TTY      STAT   TIME COMMAND
+  47173 ?        SLl  404470:25 /usr/bin/vpp -c /etc/vpp/vpp.conf
+
+2048 kB hugepage size
+---------------------
+1258 Mb reserved
+
+1 GB hugepage size
+--------------------
+4096 Mb reserved
+
+COMMAND
+/usr/bin/vpp -c /etc/vpp/vpp.conf
+ has 5354 Mb reserved in static hugepages
+
++ numastat -p 47173
+
+Per-node process memory usage (in MBs) for PID 47173 (vpp_main)
+                           Node 0          Node 1           Total
+                  --------------- --------------- ---------------
+Huge                       638.00          628.00         1266.00
+Heap                         0.14            0.00            0.14
+Stack                        0.00            0.00            0.01
+Private                     14.36            0.25           14.61
+----------------  --------------- --------------- ---------------
+Total                      652.50          628.25         1280.75
++ set +x
+#-------------------------------------------------------
+
+    PID TTY      STAT   TIME COMMAND
+1618517 ?        Sl    19:51 /usr/libexec/qemu-kvm -name guest=instance-0000001f,debug-threads=on -S -ob
+
+2048 kB hugepage size
+---------------------
+0 Mb reserved
+
+1 GB hugepage size
+--------------------
+2048 Mb reserved
+
+COMMAND
+/usr/libexec/qemu-kvm -name guest=instance-0000001f
+ has 2048 Mb reserved in static hugepages
+
++ numastat -p 1618517
+
+Per-node process memory usage (in MBs) for PID 1618517 (qemu-kvm)
+                           Node 0          Node 1           Total
+                  --------------- --------------- ---------------
+Huge                         4.00            0.00            4.00
+Heap                        26.06            0.00           26.06
+Stack                        0.03            0.00            0.03
+Private                      7.58            0.06            7.64
+----------------  --------------- --------------- ---------------
+Total                       37.67            0.06           37.73
++ set +x
+#-------------------------------------------------------
