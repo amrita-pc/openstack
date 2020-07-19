@@ -1,0 +1,15 @@
+Generate ssh statements for UCS CIMC login:
+
+NOTE: Passing the password on command-line is *insecure*, the password will appear in .bash_history and ps, do this only if you are sure there are no other users snooping on your machine.
+
+# for i in $(awk -F[:}] '/cimc_ip/{print $(NF-1)}' openstack-configs/setup_data.yaml); do echo "sshpass -p "password" ssh admin@$i"; done
+sshpass -p password ssh admin@192.168.11.34
+sshpass -p password ssh admin@192.168.11.35
+sshpass -p password ssh admin@192.168.11.36
+sshpass -p password ssh admin@192.168.11.37
+sshpass -p password ssh admin@192.168.11.31
+sshpass -p password ssh admin@192.168.11.32
+sshpass -p password ssh admin@192.168.11.33
+sshpass -p password ssh admin@192.168.11.38
+sshpass -p password ssh admin@192.168.11.39
+sshpass -p password ssh admin@192.168.11.40
