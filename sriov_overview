@@ -1,0 +1,35 @@
+#!/bin/bash
+
+printf "%25s %15s %15s %10s %20s %10s %10s\n" "PORT STATUS" "NIC CARD #" "VENDOR" "DRIVER" "DRIVER VERSION" "MAX_VFS" "NUM_VFS_CREATED"
+
+sriov_arr=()
+for sriov in $(ls -ld /sys/class/net/sriov* | awk -F/ '{print $NF}')
+do
+        sriov_arr+=("$sriov")
+done
+
+for sriov in "${sriov_arr[@]}"
+do
+        printf "%-18s" "$sriov"
+        cat /sys/class/net/$sriov/operstate
+        vendor_id=$(cat /sys/class/net/$sriov/device/subsystem_vendor)
+        vendor_id=${vendor_id#0x}
+        cat /usr/share/hwdata/pci.ids | awk -v vendor=$vendor_id '/vendor/{$1="";print $0}'
+        basename $(readlink -f /sys/class/net/$sriov/device/driver)
+        modinfo $(basename $_) | awk '/^version/{print $NF}'
+        cat /sys/class/net/$sriov/device/sriov_totalvfs
+        ls -l /sys/class/net/$sriov/device/ | grep -c virtfn*
+done
+
+=============
+SAMPLE OUTPUT
+=============
+
+          Port Status  NIC Card #          Vendor/Model        Max_VFS     Num_VFS_created     
+sriov0         UP           1                IntelX520            64            100            
+sriov1         UP           2                IntelX520            64            200  
+sriov2         UP           1                IntelX520            64            200 
+sriov3         UP           2                IntelX520            64            100   
+
+sriov_port      VF ID        IOMMU Group
+sriov0          81:12.4         140
