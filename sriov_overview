@@ -21,9 +21,9 @@ do
         ls -l /sys/class/net/$sriov/device/ | grep -c virtfn*
 done
 
-=============
-SAMPLE OUTPUT
-=============
+===============
+DESIRED OUTPUT
+===============
 
           Port Status  NIC Card #          Vendor/Model        Max_VFS     Num_VFS_created     
 sriov0         UP           1                IntelX520            64            100            
