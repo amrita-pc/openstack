@@ -1,0 +1,12 @@
+#!/bin/bash
+
+total_num_hugepages=0
+
+for id in $(grep huge /proc/*/numa_maps 2>/dev/null | awk -F'/' '{proc[$3]=1} END {for (i in proc) print i}'); do
+        for hugepagesize in $(find /sys/devices/system/node/node[0-9]*/hugepages/ -type d -name "hugepages-*" | sed 's/.*hugepages-\([0-9]\+\).*/\1/'| sort | uniq);
+        do
+        ps $id;
+        total_num_hugepages+=$(grep huge /proc/$id/numa_maps 2>/dev/null | grep "kernelpagesize.*=$hugepagesize" | sed 's/.*dirty=\([0-9]\+\).*/\1/')
+        echo $total_num_hugepages
+        done
+done
