@@ -26,10 +26,10 @@ Sample output
 VNF NAME                                                     | PROJECT NAME
 ----------------------------------------------------------------------------
 theodore-test                                                | core
-sf1-3                                 					          	 | core
-sf1-2                                					               | core
-sf1-0                              						               | core
-sf1-1                             						               | core
+sf1-3                                 			     | core
+sf1-2                                			     | core
+sf1-0                              			     | core
+sf1-1                             		             | core
 esc02-drbd                                                   | admin
 esc01-drbd                                                   | admin
 xyz-instance                                                 | user123
